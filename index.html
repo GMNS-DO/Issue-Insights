@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GMNS Risk Intelligence</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23006FCF'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>G</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#006FCF;--blue-dark:#0052A3;--blue-light:#E8F2FB;--blue-mid:#CCE0F5;
+  --bg:#F4F6F9;--bg2:#EBF0F7;--card:#FFFFFF;--border:#D4DDE8;
+  --text:#1A2332;--text2:#4A5568;--text3:#8E9BAD;
+  --green:#1A7F4B;--green-bg:#E6F4ED;
+  --amber:#C45E00;--amber-bg:#FFF0E3;
+  --red:#C1202A;--red-bg:#FDE8E9;
+  --gray:#6B7280;--gray-bg:#F3F4F6;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;line-height:1.55}
+
+/* ── UPLOAD ──────────────────────────────────────────── */
+#upload-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:var(--bg)}
+.upload-header{text-align:center;margin-bottom:2.5rem}
+.upload-header .brand{font-size:1.75rem;font-weight:800;color:var(--blue);letter-spacing:-.5px}
+.upload-header .tagline{color:var(--text2);font-size:.85rem;margin-top:.3rem}
+.mode-tabs{display:flex;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+.mode-tabs button{font-family:inherit;font-size:.82rem;font-weight:500;padding:.6rem 1.75rem;border:none;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s;border-right:1px solid var(--border)}
+.mode-tabs button:last-child{border-right:none}
+.mode-tabs button.active{background:var(--blue);color:#fff}
+.mode-tabs button:hover:not(.active){background:var(--bg);color:var(--text)}
+.upload-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;text-align:center;width:100%;max-width:540px;box-shadow:var(--shadow)}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:2.5rem 1.5rem;cursor:pointer;transition:all .2s;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--blue);background:var(--blue-light)}
+.drop-zone.drag-over{border-style:solid}
+.drop-icon{font-size:2.2rem;margin-bottom:.75rem;display:block}
+.drop-zone h3{font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:.3rem}
+.drop-zone p{font-size:.78rem;color:var(--text3)}
+.drop-zone input[type="file"]{display:none}
+.file-badge{display:inline-flex;align-items:center;gap:.4rem;font-family:inherit;font-size:.78rem;font-weight:500;background:var(--blue-light);color:var(--blue);padding:.3rem .75rem;border-radius:999px;margin-top:.75rem}
+.file-badge .x{background:var(--blue);color:#fff;border:none;border-radius:50%;width:14px;height:14px;cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center;line-height:1}
+.drop-zone.has-file{border-color:var(--blue);border-style:solid;background:var(--blue-light)}
+.combined-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;width:100%}
+.drop-label{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;text-align:center;margin-bottom:.4rem}
+.drop-pair{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:1.5rem 1rem;cursor:pointer;transition:all .2s;text-align:center;position:relative;background:var(--card)}
+.drop-pair:hover,.drop-pair.drag-over{border-color:var(--blue)}
+.drop-pair.has-file{border-color:var(--blue);border-style:solid;background:var(--blue-light)}
+.drop-pair h4{font-size:.82rem;font-weight:600;margin:.4rem 0 .15rem}
+.drop-pair p{font-size:.72rem;color:var(--text3)}
+.drop-pair input{display:none}
+.drop-pair .file-name{font-size:.72rem;font-weight:500;color:var(--blue);margin-top:.4rem;display:block;word-break:break-all}
+.drop-pair .remove-btn{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:.85rem}
+.drop-pair .remove-btn:hover{color:var(--red)}
+.ore-top{border-top:3px solid var(--blue)}
+.iss-top{border-top:3px solid var(--green)}
+.process-btn{margin-top:1.5rem;font-family:inherit;font-size:.9rem;font-weight:600;padding:.75rem 2.5rem;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;width:100%;max-width:300px}
+.process-btn:hover{background:var(--blue-dark)}
+.process-btn:disabled{background:var(--border);color:var(--text3);cursor:not-allowed}
+.error-msg{background:var(--red-bg);border:1px solid #F5C6CB;color:var(--red);padding:.75rem 1rem;border-radius:var(--radius-sm);font-size:.8rem;max-width:540px;width:100%;margin-top:1rem}
+.combined-wrap{display:none}
+
+/* ── LOADING ─────────────────────────────────────────── */
+#loading-overlay{display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(244,246,249,.92);z-index:1000;backdrop-filter:blur(4px)}
+.spinner{width:40px;height:40px;border:3px solid var(--blue-mid);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-msg{font-size:.85rem;color:var(--text2);font-weight:500}
+
+/* ── DASHBOARD ──────────────────────────────────────── */
+#dashboard{display:none}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;padding:.85rem 2rem;background:var(--blue);color:#fff;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,111,207,.3);gap:1rem}
+.topbar-brand{font-size:1rem;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
+.topbar-meta{font-size:.75rem;opacity:.85;margin-left:auto;margin-right:1rem;text-align:right;line-height:1.4}
+.topbar-meta strong{display:block;font-weight:600}
+.btn{font-family:inherit;font-size:.78rem;font-weight:500;padding:.4rem 1rem;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:all .15s}
+.btn-white{background:#fff;color:var(--blue)}
+.btn-white:hover{background:var(--blue-light)}
+.btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+
+/* VIEW TOGGLE */
+.view-toggle-wrap{display:none;justify-content:center;padding:.65rem 2rem;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:54px;z-index:90}
+.view-toggle-wrap.active{display:flex}
+.view-toggle{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;gap:2px}
+.view-toggle button{font-family:inherit;font-size:.78rem;font-weight:500;padding:.35rem 1.1rem;border:none;border-radius:5px;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s}
+.view-toggle button.active{background:var(--card);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:.4rem;padding:.65rem 2rem;background:var(--card);border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:104px;z-index:80}
+.fl{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.fs{font-family:inherit;font-size:.78rem;padding:.3rem .6rem;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;min-width:130px}
+.fs:focus{outline:none;border-color:var(--blue)}
+.fs:disabled{opacity:.5;cursor:not-allowed}
+.fsep{width:1px;height:18px;background:var(--border)}
+.fcnt{font-size:.7rem;font-weight:600;background:var(--blue);color:#fff;padding:.1rem .45rem;border-radius:999px}
+.ftag{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;padding:.2rem .5rem;background:var(--bg2);border:1px solid var(--border);border-radius:999px;color:var(--text2)}
+.ftag button{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.85rem;padding:0}
+.ftag button:hover{color:var(--red)}
+
+/* KPI */
+.kpi-section{background:var(--card);padding-top:.5rem;padding-bottom:.25rem}
+.kpi-row{padding:1rem 2rem 1.25rem;display:flex;gap:.85rem;overflow-x:auto;scrollbar-width:none}
+.kpi-row::-webkit-scrollbar{display:none}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.9rem 1.1rem;min-width:130px;flex-shrink:0;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.blue::before{background:var(--blue)}
+.kpi-card.green::before{background:var(--green)}
+.kpi-card.amber::before{background:var(--amber)}
+.kpi-card.red::before{background:var(--red)}
+.kpi-card.teal::before{background:var(--green)}
+.kpi-card.dark::before{background:var(--text)}
+.kpi-big{font-size:1.8rem;font-weight:800;line-height:1;margin-bottom:.15rem;font-variant-numeric:tabular-nums}
+.kpi-lbl{font-size:.7rem;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
+.kpi-sub{font-size:.68rem;color:var(--text3);margin-top:.15rem}
+
+/* CHARTS */
+.ch-section{padding:0 2rem 1.25rem}
+.ch-grid{display:grid;gap:1rem}
+.ch-grid.c3{grid-template-columns:repeat(3,1fr)}
+.ch-grid.c2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.ch-grid.c3,.ch-grid.c2{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.ch-grid.c3,.ch-grid.c2{grid-template-columns:1fr}}
+.ch-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.ch-header{display:flex;align-items:baseline;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border)}
+.ch-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.ch-sub{font-size:.68rem;color:var(--text3);margin-left:.4rem;font-weight:400;text-transform:none;letter-spacing:0}
+.ch-meta{font-size:.68rem;color:var(--text3)}
+.ch-wrap{padding:.7rem .9rem .9rem;height:220px;position:relative;box-sizing:border-box}
+.no-data{display:flex;align-items:center;justify-content:center;height:160px;color:var(--text3);font-size:.82rem;font-style:italic}
+
+/* QUALITY */
+.q-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding:0 2rem 1.25rem}
+@media(max-width:768px){.q-row{grid-template-columns:repeat(2,1fr)}}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.8rem 1rem;display:flex;align-items:center;gap:.8rem;cursor:pointer;box-shadow:var(--shadow);transition:border-color .15s}
+.q-card:hover{border-color:var(--blue)}
+.q-card.hi{border-left:3px solid var(--red)}
+.q-card.ok{border-left:3px solid var(--border)}
+.q-icon{font-size:1.3rem;flex-shrink:0}
+.q-body{flex:1}
+.q-count{font-size:1.3rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.q-count.hi{color:var(--red)}
+.q-label{font-size:.68rem;color:var(--text3);margin-top:.1rem}
+
+/* TABLE */
+.t-section{padding:0 2rem 2rem}
+.t-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.t-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border);gap:1rem;flex-wrap:wrap}
+.t-left{display:flex;align-items:center;gap:.75rem}
+.t-title{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.t-search{font-family:inherit;font-size:.78rem;padding:.38rem .8rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);width:220px}
+.t-search:focus{outline:none;border-color:var(--blue)}
+.t-info{font-size:.75rem;color:var(--text3);white-space:nowrap}
+.btn-exp{font-family:inherit;font-size:.75rem;font-weight:600;padding:.35rem .85rem;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;white-space:nowrap}
+.btn-exp.csv{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
+.btn-exp.csv:hover{border-color:var(--text2)}
+.btn-exp.xls{background:var(--blue);color:#fff}
+.btn-exp.xls:hover{background:var(--blue-dark)}
+.t-scroll{overflow-x:auto;max-height:480px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+thead th{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);padding:.7rem .9rem;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:10}
+thead th:hover{color:var(--blue)}
+thead th.sorted{color:var(--blue)}
+thead th .si{margin-left:.3rem;opacity:.4;font-size:.62rem}
+thead th.sorted .si{opacity:1}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+tbody td{padding:.55rem .9rem;vertical-align:middle}
+td.id-cell{font-size:.72rem;color:var(--text3);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.tit-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-block;padding:.1rem .42rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.b-ore{background:#EBF4FF;color:#0052A3}
+.b-iss{background:var(--green-bg);color:var(--green)}
+.b-past{background:var(--amber-bg);color:var(--amber)}
+.b-risk{background:var(--red-bg);color:var(--red)}
+.b-ong{background:#FFF3CD;color:#856404}
+.b-soon{background:var(--blue-light);color:var(--blue)}
+.b-age{background:var(--gray-bg);color:var(--gray)}
+.spill{display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;padding:.12rem .48rem;border-radius:999px;background:var(--bg2);border:1px solid var(--border)}
+.dot-sm{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.dot-o{background:var(--green)}
+.dot-c{background:var(--text3)}
+.r-hi{color:var(--red);font-weight:600}
+.r-med{color:var(--amber);font-weight:600}
+.t-pg{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-top:1px solid var(--border)}
+.pg-info{font-size:.72rem;color:var(--text3)}
+.pg-ctrl{display:flex;gap:.2rem}
+.pg-btn{font-family:inherit;font-size:.72rem;padding:.28rem .55rem;background:var(--bg);color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer}
+.pg-btn:hover{color:var(--text);border-color:var(--text2)}
+.pg-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- ── UPLOAD ──────────────────────────────────────────── -->
+<div id="upload-screen">
+  <div class="upload-header">
+    <div class="brand">GMNS Risk Intelligence</div>
+    <div class="tagline">ORE &amp; Issues Analytics Dashboard</div>
+  </div>
+
+  <div class="upload-card">
+    <div class="drop-zone" id="dz-main">
+      <button class="remove-btn" id="rm-main" style="display:none" onclick="event.stopPropagation();clearMain()">×</button>
+      <span class="drop-icon">📊</span>
+      <h3>Drop your GMNS Excel file here</h3>
+      <p id="dz-hint">Supports ORE sheets, Issues sheets, or a workbook with both · .xlsx</p>
+      <input type="file" id="fi-main" accept=".xlsx,.xls">
+      <div id="dz-file" class="file-badge" style="display:none"></div>
+    </div>
+    <div id="file-summary" style="display:none;margin-top:.75rem;font-size:.78rem;color:var(--text2);text-align:center"></div>
+  </div>
+
+  <div id="err"></div>
+  <button class="process-btn" id="process-btn" onclick="processFiles()">Load Dashboard</button>
+</div>
+
+<!-- ── LOADING ─────────────────────────────────────────── -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loading-msg">Processing...</div>
+</div>
+
+<!-- ── DASHBOARD ──────────────────────────────────────── -->
+<div id="dashboard">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <span class="topbar-brand">GMNS Risk Intelligence</span>
+    <div class="topbar-meta">
+      <strong id="meta-file"></strong>
+      <span id="meta-rows"></span>
+    </div>
+    <button class="btn btn-ghost" onclick="exportXLS()">Export Excel ⬇</button>
+    <button class="btn btn-white" onclick="resetDashboard()">New Upload</button>
+  </div>
+
+  <!-- VIEW TOGGLE -->
+  <div class="view-toggle-wrap" id="view-toggle">
+    <div class="view-toggle">
+      <button class="active" data-view="combined" onclick="setView('combined')">Combined</button>
+      <button data-view="ore" onclick="setView('ore')">ORE</button>
+      <button data-view="issue" onclick="setView('issue')">Issues</button>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <span class="fl">Filter:</span>
+    <select class="fs" id="f-type"    onchange="applyFilters()"><option value="">All Types</option></select>
+    <select class="fs" id="f-status" onchange="applyFilters()"><option value="">All Statuses</option></select>
+    <select class="fs" id="f-rating" onchange="applyFilters()"><option value="">All Ratings</option></select>
+    <select class="fs" id="f-theme"  onchange="applyFilters()"><option value="">All Themes</option></select>
+    <select class="fs" id="f-owner"   onchange="applyFilters()"><option value="">All Owners</option></select>
+    <select class="fs" id="f-market" onchange="applyFilters()"><option value="">All Markets</option></select>
+    <select class="fs" id="f-age"    onchange="applyFilters()"><option value="">All Ages</option></select>
+    <div class="fsep"></div>
+    <button class="btn btn-ghost" onclick="clearFilters()" style="font-size:.72rem;padding:.28rem .6rem">Clear</button>
+    <span id="fcnt" class="fcnt" style="display:none"></span>
+    <div class="filter-tags" id="ftags"></div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-section" id="kpi-section">
+    <div class="kpi-row" id="kpi-row"></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="ch-section">
+    <div class="ch-grid c3" id="ch-row-1"></div>
+  </div>
+  <div class="ch-section" style="padding-top:0">
+    <div class="ch-grid c2" id="ch-row-2"></div>
+  </div>
+  <div class="ch-section" style="padding-top:0">
+    <div class="ch-grid c2" id="ch-row-3"></div>
+  </div>
+
+  <!-- QUALITY -->
+  <div class="q-row" id="q-row"></div>
+
+  <!-- TABLE -->
+  <div class="t-section">
+    <div class="t-card">
+      <div class="t-toolbar">
+        <div class="t-left">
+          <span class="t-title">Drilldown</span>
+        </div>
+        <input type="text" class="t-search" id="t-search" placeholder="Search..." oninput="onSearch()">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <span class="t-info" id="t-info"></span>
+          <button class="btn-exp csv" onclick="exportCSV()">Export CSV</button>
+          <button class="btn-exp xls" onclick="exportXLS()">Export Excel</button>
+        </div>
+      </div>
+      <div class="t-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th data-col="ore_id"             onclick="sort('ore_id')">ID <span class="si">↕</span></th>
+              <th data-col="title"             onclick="sort('title')">Title <span class="si">↕</span></th>
+              <th data-col="record_type"        onclick="sort('record_type')">Type <span class="si">↕</span></th>
+              <th data-col="owner"             onclick="sort('owner')">Owner <span class="si">↕</span></th>
+              <th data-col="team_l2"           onclick="sort('team_l2')">Team <span class="si">↕</span></th>
+              <th data-col="status"            onclick="sort('status')">Status <span class="si">↕</span></th>
+              <th data-col="rating"            onclick="sort('rating')">Rating <span class="si">↕</span></th>
+              <th data-col="gmns_theme"        onclick="sort('gmns_theme')">GMNS Theme <span class="si">↕</span></th>
+              <th data-col="country"           onclick="sort('country')">Market <span class="si">↕</span></th>
+              <th data-col="identification_date" onclick="sort('identification_date')">Identified <span class="si">↕</span></th>
+              <th data-col="age_bucket"        onclick="sort('age_bucket')">Age <span class="si">↕</span></th>
+              <th data-col="flags"             onclick="sort('flags')">Flags <span class="si">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="t-body"></tbody>
+        </table>
+      </div>
+      <div class="t-pg">
+        <span class="pg-info" id="pg-info"></span>
+        <div class="pg-ctrl" id="pg-ctrl"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  PERFORMANCE: Pre-compiled helpers
+// ═══════════════════════════════════════════════════════════════════
+const NS     = v => v == null ? '' : String(v).trim();
+const ISY    = v => ['yes','y','true','1'].includes(NS(v).toLowerCase());
+const ISODATE = d => d instanceof Date ? d : d ? new Date(NS(d)) : null;
+const ISDATE  = d => d instanceof Date && !isNaN(d);
+const TODAY   = () => new Date();
+const DAYS    = (d1, d2) => d1 && d2 ? Math.floor((d2 - d1) / 864e5) : null;
+const PNUM    = v => { if (v == null || v === '') return null; const n = parseFloat(NS(v).replace(/[$,]/g, '')); return isNaN(n) ? null : n; };
+const SPLIT   = v => { const s = NS(v); return s ? s.split(/[,;]/).map(x => x.trim()).filter(x => x) : []; };
+const ESC     = s => s == null ? '' : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const EXCEL_1900 = new Date('1899-12-30');
+
+// Convert Excel serial date to JS Date
+function fromExcel(v) {
+  if (v instanceof Date) return ISDATE(v) ? v : null;
+  if (typeof v === 'number' && v > 0) {
+    const d = new Date(EXCEL_1900.getTime() + v * 864e5);
+    return ISDATE(d) ? d : null;
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════
+let oreRecords    = [];
+let issueRecords  = [];
+let allRecords    = [];
+let filtered      = [];
+let page          = 1;
+const PAGE        = 25;
+let sortCol       = 'identification_date';
+let sortDir       = 'desc';
+let charts        = {};      // Chart instances
+let mode          = 'combined'; // 'ore' | 'issue' | 'combined' — set dynamically after file scan
+let view          = 'combined';
+let searchTimer   = null;
+
+// ═══════════════════════════════════════════════════════════════════
+//  THEME MAP  (flat key = lowercase stripped)
+// ═══════════════════════════════════════════════════════════════════
+const THEMEMAP = {
+  'benefits': 'Benefit and Rewards',
+  'benefit and rewards': 'Benefit and Rewards',
+  'customer billing & payments': 'Billing and Payments',
+  'billing and payments': 'Billing and Payments',
+  'customer management': 'Merchant Management',
+  'merchant management': 'Merchant Management',
+  'financial crimes': 'Financial Crimes',
+  'offers': 'Benefit and Rewards',
+  'partner/vendor management': 'Merchant Management',
+  'regulatory & financial reporting': 'Reporting',
+  'unknown': 'Others',
+  'aml/cft operations / sor': 'Financial Crimes',
+  'aml/cft operations/sor': 'Financial Crimes',
+  'cdd/kyc': 'Financial Crimes',
+  'colleague management': 'Others',
+  'communication': 'Others',
+  'customer account servicing': 'Billing and Payments',
+  'customer privacy': 'Others',
+  'first line risk management': 'Risk Management',
+  'incorrect collection practices': 'Others',
+  'policy and program': 'Others',
+  'pricing': 'Financial Crimes',
+  'regulatory requests and reporting': 'Reporting',
+  'reporting': 'Reporting',
+  'rewards': 'Benefit and Rewards',
+  'risk assessment': 'Risk Management',
+  'risk management': 'Risk Management',
+  'screening': 'Financial Crimes',
+  'statement & settlement issues': 'Billing and Payments',
+  'statement credit': 'Billing and Payments',
+  'transactions': 'Billing and Payments',
+};
+
+function mapTheme(v) {
+  if (!v) return { t: null, s: 'empty' };
+  const k = NS(v).toLowerCase().replace(/\s+/g, ' ');
+  const m = THEMEMAP[k] || 'Others';
+  return { t: m, s: THEMEMAP[k] ? 'mapped' : 'fallback' };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  COLUMNS  (source → internal, built once per sheet)
+// ═══════════════════════════════════════════════════════════════════
+// Returns a map: { internalFieldName: sourceColumnIndex }
+// and an array of column names for output
+function buildColMap(rawKeys, mapping) {
+  const srcIdx = {};
+  const rawLower = rawKeys.map(k => NS(k).toLowerCase());
+  for (const [src, tgt] of Object.entries(mapping)) {
+    const srcLower = src.toLowerCase();
+    const idx = rawKeys.findIndex(k => NS(k) === src) !== -1
+      ? rawKeys.findIndex(k => NS(k) === src)
+      : rawLower.findIndex(k => k === srcLower);
+    if (idx !== -1) srcIdx[tgt] = idx;
+  }
+  return srcIdx;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ORE COL MAP
+// ═══════════════════════════════════════════════════════════════════
+const ORE_MAP = {
+  'ORE ID': 'ore_id',
+  'ORE Title': 'title',
+  'ORE Description': 'description',
+  'OS Name Level 1': 'team_l1',
+  'OS Name Level 2': 'team_l2',
+  'OS Name Level 3': 'team_l3',
+  'ORE Status (Derived)': 'status',
+  'ORE Owner': 'owner',
+  'Accountable Executive': 'accountable_exec',
+  'Business Unit Control Manager': 'bucm',
+  'ORE Theme': 'source_theme',
+  'ORE Sub Theme': 'sub_theme',
+  'ORE Type Level 1': 'type_l1',
+  'ORE Type Level 2': 'type_l2',
+  'ORE Country Occurred': 'country',
+  'Impacted Legal Entities': 'legal_entities',
+  'ORE Rating': 'rating',
+  'Is there an Ongoing Impact?': 'ongoing_impact',
+  'ORE Identification Date': 'identification_date',
+  'ORE Occurrence Start Date': 'occurrence_date',
+  'ORE Capture Due Date': 'capture_due_date',
+  'Total Actual Financial Amount (USD)': 'financial_amount_usd',
+  'Total Loss Outcome (USD)': 'loss_usd',
+  'ORE Cancelation': 'cancellation',
+  'Past Due': 'past_due',
+  'Risk Pillar': 'risk_pillar',
+  'Risk Level 2': 'risk_level2',
+  'Data': 'data_flag',
+  'Privacy': 'privacy_flag',
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  ISSUE COL MAP
+// ═══════════════════════════════════════════════════════════════════
+const ISS_MAP = {
+  'Issue ID': 'issue_id',
+  'Issue Title': 'title',
+  'Issue Description': 'description',
+  'Issue Owner': 'owner',
+  'Issue Owner Business Unit (L1)': 'team_l1',
+  'Issue Owner Business Unit (L2)': 'team_l2',
+  'Issue Owner Business Unit (L3)': 'team_l3',
+  'Issue Accountable Executive': 'accountable_exec',
+  'Business Unit Control Manager (BUCM)': 'bucm',
+  'Issue Status': 'status',
+  'Issue Status Rating': 'rating',
+  'Issue Theme': 'source_theme',
+  'Issue Sub Theme': 'sub_theme',
+  'Impacted Countries': 'country',
+  'Impacted Legal Entities': 'legal_entities',
+  'Issue Identification Date': 'identification_date',
+  'Issue Sustainability Current Target Date': 'capture_due_date',
+  'Root Cause Theme': 'root_cause_theme',
+  'Root Cause Sub Theme': 'root_cause_sub_theme',
+  'Is this a Repeat Issue?': 'is_repeat',
+  'Will Regulator Track This Issue?': 'regulator_tracking',
+  'Past Due': 'past_due',
+  'Failed Validation': 'failed_validation',
+  'Long Dated': 'long_dated',
+  'New Red/Amber': 'new_red_amber',
+  'Risk Level 2': 'risk_level2',
+  'Data': 'data_flag',
+  'Privacy': 'privacy_flag',
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  FAST ROW TRANSFORM  (single-pass, no intermediate objects)
+// ═══════════════════════════════════════════════════════════════════
+function ageBucket(idate) {
+  const d = ISODATE(idate);
+  if (!d) return 'Unknown';
+  const days = DAYS(d, TODAY());
+  if (days == null) return 'Unknown';
+  if (days < 0)   return 'Future';
+  if (days <= 30)  return '0–30 days';
+  if (days <= 60)  return '31–60 days';
+  if (days <= 90)  return '61–90 days';
+  if (days <= 180) return '91–180 days';
+  return '180+ days';
+}
+
+function derive(r) {
+  const status = NS(r.status);
+  const rating = NS(r.rating);
+
+  r.is_open   = /open/i.test(status);
+  r.is_closed = /closed/i.test(status);
+  r.is_high   = /high|red/i.test(rating);
+  r.is_medium = /medium|amber/i.test(rating);
+
+  const pd = NS(r.past_due).toLowerCase();
+  r.is_past_due = ['yes','y','true'].includes(pd);
+  if (!r.is_past_due && r.capture_due_date) {
+    const due = ISODATE(r.capture_due_date);
+    if (due && due < TODAY() && r.is_open) r.is_past_due = true;
+  }
+
+  r.is_due_soon = false;
+  if (r.capture_due_date && r.is_open) {
+    const due = ISODATE(r.capture_due_date);
+    if (due) { const d = DAYS(TODAY(), due); if (d != null && d >= 0 && d <= 14) r.is_due_soon = true; }
+  }
+
+  r.country_list       = SPLIT(r.country);
+  r.legal_entity_list  = SPLIT(r.legal_entities);
+  r.missing_owner      = !NS(r.owner);
+  r.missing_theme      = !NS(r.source_theme);
+  r.missing_country    = !NS(r.country);
+  r.missing_root_cause = r.record_type === 'ISSUE' && !NS(r.root_cause_theme);
+  r.data_flagged       = ISY(r.data_flag);
+  r.privacy_flagged    = ISY(r.privacy_flag);
+
+  const idate = ISODATE(r.identification_date);
+  r.age_days    = idate ? DAYS(idate, TODAY()) : null;
+  r.age_bucket  = ageBucket(r.identification_date);
+  r.financial_amount_usd = PNUM(r.financial_amount_usd);
+  r.loss_usd    = PNUM(r.loss_usd);
+
+  const { t, s } = mapTheme(r.source_theme);
+  r.gmns_theme     = t || '';
+  r.mapping_status = s;
+}
+
+// Map a raw row → internal record, using pre-built col index map
+function mapRow(rawRow, colIdx, type) {
+  const r = { record_type: type };
+  for (const [field, idx] of Object.entries(colIdx)) {
+    let v = rawRow[idx];
+    // Convert Excel date serials to Date objects
+    if (v instanceof Date) { r[field] = v; continue; }
+    if (typeof v === 'number' && v > 25569 && v < 50000) { // Excel date range
+      const d = fromExcel(v);
+      if (d) { r[field] = d; continue; }
+    }
+    r[field] = v == null ? '' : v;
+  }
+  r.ore_id = NS(r.ore_id) || NS(r.issue_id) || (type === 'ORE' ? 'ORE-' : 'ISS-') + Math.random().toString(36).slice(2, 8);
+  derive(r);
+  return r;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  UPLOAD SETUP  (one function per zone)
+// ═══════════════════════════════════════════════════════════════════
+function drop(id, fi, cb) {
+  const el = document.getElementById(id);
+  const inp = document.getElementById(fi);
+  el.addEventListener('click', () => inp.click());
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('drag-over'); if (e.dataTransfer.files[0]) cb(e.dataTransfer.files[0]); });
+  inp.addEventListener('change', e => { if (e.target.files[0]) cb(e.target.files[0]); });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  UPLOAD  — single unified zone, column-based auto-detection
+// ═══════════════════════════════════════════════════════════════════
+let mainFile = null;
+
+function handleMain(f) {
+  if (!f.name.match(/\.xlsx?$/i)) { showErr('Please upload a .xlsx file.'); return; }
+  mainFile = f;
+  const ff = document.getElementById('dz-file');
+  ff.innerHTML = `📎 ${ESC(f.name)} <span class="x" onclick="event.stopPropagation();clearMain()">×</span>`;
+  ff.style.display = 'inline-flex'; ff.style.alignItems = 'center'; ff.style.gap = '.3rem';
+  document.getElementById('dz-main').classList.add('has-file');
+  document.getElementById('rm-main').style.display = 'block';
+  document.getElementById('file-summary').style.display = 'none';
+  document.getElementById('err').innerHTML = '';
+  // Peek at sheet names to show preview
+  peekSheets(f);
+}
+
+async function peekSheets(f) {
+  try {
+    const buf = new Uint8Array(await f.arrayBuffer());
+    const wb = XLSX.read(buf, { type: 'array', raw: true });
+    const snames = wb.SheetNames;
+    const preview = snames.map(sn => {
+      const sh = wb.Sheets[sn];
+      const aoa = XLSX.utils.sheet_to_json(sh, { header: 1, defval: '', raw: false });
+      const hdrs = (aoa[0] || []).map(h => h == null ? '' : String(h).trim()).filter(Boolean);
+      const rows = aoa.length - 1;
+      const type = classifySheet(hdrs);
+      return `${type === 'ISSUE' ? '🟢' : type === 'ORE' ? '🔵' : '❓'} "${sn}" — ${rows} rows`;
+    }).join('<br>');
+    const el = document.getElementById('file-summary');
+    el.innerHTML = preview;
+    el.style.display = 'block';
+  } catch (_) {}
+}
+
+function clearMain() {
+  mainFile = null;
+  document.getElementById('dz-main').classList.remove('has-file');
+  document.getElementById('dz-file').style.display = 'none';
+  document.getElementById('rm-main').style.display = 'none';
+  document.getElementById('fi-main').value = '';
+  document.getElementById('file-summary').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+//  COLUMN-BASED SHEET CLASSIFICATION
+//  Sheet type is determined by column headers — not sheet name
+// ═══════════════════════════════════════════════════════════════════
+// Key columns that definitively identify each sheet type
+const ORE_COLS = ['ORE ID', 'ORE Title', 'ORE Status', 'ORE Owner', 'ORE Theme'];
+const ISS_COLS = ['Issue ID', 'Issue Title', 'Issue Status', 'Issue Owner', 'Issue Theme'];
+
+function classifySheet(headers) {
+  const oreScore = ORE_COLS.filter(c => headers.includes(c)).length;
+  const issScore = ISS_COLS.filter(c => headers.includes(c)).length;
+  if (oreScore > 0 && oreScore >= issScore) return 'ORE';
+  if (issScore > 0 && issScore >= oreScore) return 'ISSUE';
+  return null; // unknown/unclassified sheet
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  PROCESS
+//  Reads ONE file, scans ALL sheets, auto-classifies by column headers
+// ═══════════════════════════════════════════════════════════════════
+
+// Process a single sheet and return records array
+function processSheet(wb, sheetName) {
+  const sheet = wb.Sheets[sheetName];
+  const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+  if (!aoa || aoa.length < 2) return [];
+
+  const headers = aoa[0].map(h => h == null ? '' : String(h).trim());
+  const type = classifySheet(headers);
+  if (!type) return []; // unknown sheet type — skip
+
+  const mapping = type === 'ORE' ? ORE_MAP : ISS_MAP;
+  const dataRows = aoa.slice(1).filter(row => row.some(c => c != null && c !== ''));
+  const colIdx = buildColMap(headers, mapping);
+  return dataRows.map(row => mapRow(row, colIdx, type));
+}
+
+async function processFiles() {
+  document.getElementById('err').innerHTML = '';
+  if (!mainFile) { showErr('Please select an Excel file first.'); return; }
+
+  showLoad();
+  oreRecords = []; issueRecords = [];
+
+  try {
+    setMsg('Reading workbook…');
+    const buf = new Uint8Array(await mainFile.arrayBuffer());
+    const wb = XLSX.read(buf, { type: 'array', raw: true });
+
+    const found = [];
+    for (const sn of wb.SheetNames) {
+      setMsg(`Scanning "${sn}"…`);
+      const recs = processSheet(wb, sn);
+      if (!recs.length) continue;
+      const type = recs[0].record_type; // all recs in a sheet share same type
+      if (type === 'ORE') {
+        oreRecords.push(...recs);
+        found.push({ type: 'ORE', sheet: sn, count: recs.length });
+      } else {
+        issueRecords.push(...recs);
+        found.push({ type: 'Issues', sheet: sn, count: recs.length });
+      }
+    }
+
+    if (!oreRecords.length && !issueRecords.length) {
+      hideLoad();
+      showErr('No recognizable ORE or Issues sheets found in this file. Check column headers.');
+      return;
+    }
+
+    setMsg('Building dashboard…');
+    allRecords = [...oreRecords, ...issueRecords];
+
+    // Determine effective mode based on what was found
+    mode = (oreRecords.length && issueRecords.length) ? 'combined' :
+           oreRecords.length ? 'ore' : 'issue';
+    view = mode; // default view matches detected mode
+
+    renderDashboard();
+  } catch (e) {
+    hideLoad();
+    showErr('Failed to read file: ' + e.message);
+  }
+}
+
+function showLoad() { document.getElementById('loading-overlay').style.display = 'flex'; }
+function hideLoad() { document.getElementById('loading-overlay').style.display = 'none'; }
+function setMsg(m)  { document.getElementById('loading-msg').textContent = m; }
+function showErr(m) { document.getElementById('err').innerHTML = `<div class="error-msg">${m}</div>`; }
+
+// ═══════════════════════════════════════════════════════════════════
+//  VIEW MODE
+// ═══════════════════════════════════════════════════════════════════
+function setView(v) {
+  view = v;
+  document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  applyFilters();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RENDER DASHBOARD
+// ═══════════════════════════════════════════════════════════════════
+function renderDashboard() {
+  // Show view toggle only when both types exist
+  const hasBoth = oreRecords.length > 0 && issueRecords.length > 0;
+  document.getElementById('view-toggle').classList.toggle('active', hasBoth);
+  // Set active view button
+  document.querySelectorAll('.view-toggle button').forEach(b =>
+    b.classList.toggle('active', b.dataset.view === view)
+  );
+  populateFilters();
+  filtered = [...allRecords];
+  page = 1;
+  renderKPIs();
+  renderCharts();
+  renderQuality();
+  renderTable();
+
+  const fn = mainFile?.name || '';
+  document.getElementById('meta-file').textContent = fn;
+  document.getElementById('meta-rows').textContent =
+    `${oreRecords.length} ORE · ${issueRecords.length} Issues`;
+  hideLoad();
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  KPI  — always reads from `filtered` (dropdowns + view already applied)
+// ═══════════════════════════════════════════════════════════════════
+function renderKPIs() {
+  const recs = filtered;
+  if (!recs.length) {
+    document.getElementById('kpi-row').innerHTML =
+      `<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;color:var(--text3);font-size:.82rem;font-style:italic">
+        No records match your current filters
+       </div>`;
+    return;
+  }
+
+  const ores = recs.filter(r => r.record_type === 'ORE');
+  const iss  = recs.filter(r => r.record_type === 'ISSUE');
+
+  const open   = recs.filter(r => r.is_open).length;
+  const closed = recs.filter(r => r.is_closed).length;
+  const past   = recs.filter(r => r.is_past_due).length;
+  const high   = recs.filter(r => r.is_high).length;
+  const due14  = recs.filter(r => r.is_due_soon).length;
+  const ong    = ores.filter(r => ISY(r.ongoing_impact)).length;
+  const mpd    = recs.filter(r => r.mapping_status === 'mapped').length;
+  const dp     = recs.filter(r => r.data_flagged || r.privacy_flagged).length;
+  const ages     = recs.map(r => r.age_days).filter(d => d != null && d >= 0);
+  const avgAge    = ages.length ? (ages.reduce((a, b) => a + b, 0) / ages.length).toFixed(0) : '–';
+  const oldest   = ages.length ? Math.max(...ages) : null;
+  const cov      = recs.length ? Math.round(mpd / recs.length * 100) : 0;
+  const covCls   = cov >= 90 ? 'green' : cov >= 70 ? 'amber' : 'red';
+  const pct      = n => recs.length ? Math.round(n / recs.length * 100) : 0;
+  const ageCounts = {};
+  for (const r of recs) { const b = r.age_bucket; if (b && b !== 'Unknown') ageCounts[b] = (ageCounts[b] || 0) + 1; }
+  const dominant = Object.entries(ageCounts).sort((a, b) => b[1] - a[1])[0];
+
+  const cards = [];
+  if (ores.length) cards.push({ l: 'Total OREs', v: ores.length, c: 'blue', s: `${ores.filter(r => r.is_open).length} open` });
+  if (iss.length)  cards.push({ l: 'Total Issues', v: iss.length, c: 'teal', s: `${iss.filter(r => r.is_open).length} open` });
+  cards.push({ l: 'Open',        v: open,   c: 'green', s: `${pct(open)}% of total` });
+  cards.push({ l: 'Closed',      v: closed, c: 'dark',  s: `${pct(closed)}%` });
+  if (past > 0)   cards.push({ l: 'Overdue',        v: past,   c: 'amber', s: 'past due date' });
+  if (due14 > 0)  cards.push({ l: 'Due in 14 Days', v: due14,  c: 'amber', s: 'action required' });
+  if (high > 0)   cards.push({ l: 'High Risk',      v: high,   c: 'red',   s: 'high/red rated' });
+  if (ong > 0)    cards.push({ l: 'Ongoing Impact', v: ong,    c: 'red',   s: 'ore impact active' });
+  if (ages.length) cards.push({ l: 'Avg Age (days)',  v: avgAge, c: 'blue', s: oldest ? `oldest: ${oldest}d` : '' });
+  if (dominant)   cards.push({ l: 'Largest Cohort',   v: dominant[0], c: dominant[0].includes('180') ? 'red' : dominant[0].includes('90') ? 'amber' : 'blue', s: `${dominant[1]} records` });
+  if (dp > 0)     cards.push({ l: 'Flagged Records', v: dp,    c: 'blue', s: 'data/privacy' });
+  if (cov < 100)  cards.push({ l: 'Theme Mapped',   v: cov + '%', c: covCls, s: `${mpd}/${recs.length}` });
+
+  document.getElementById('kpi-row').innerHTML = cards.map(c =>
+    `<div class="kpi-card ${c.c}">
+      <div class="kpi-big">${ESC(c.v)}</div>
+      <div class="kpi-lbl">${c.l}</div>
+      ${c.s ? `<div class="kpi-sub">${c.s}</div>` : ''}
+    </div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CHART HELPERS
+// ═══════════════════════════════════════════════════════════════════
+const PAL = [
+  '#006FCF','#1A7F4B','#C45E00','#7C3AED','#DC2626',
+  '#0891B2','#65A30D','#CA8A04','#DB2777','#0D9488',
+];
+
+function nuke(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function countBy(recs, key) {
+  const m = {};
+  for (let i = 0; i < recs.length; i++) {
+    const v = NS(recs[i][key]) || '(blank)';
+    m[v] = (m[v] || 0) + 1;
+  }
+  return m;
+}
+
+function topCountries(recs, lim) {
+  const m = {};
+  for (let i = 0; i < recs.length; i++) {
+    const list = recs[i].country_list;
+    for (let j = 0; j < list.length; j++) m[list[j]] = (m[list[j]] || 0) + 1;
+  }
+  const e = Object.entries(m).sort((a, b) => b[1] - a[1]);
+  return lim ? e.slice(0, lim) : e;
+}
+
+function hasMinData(data, min) {
+  return data && data.filter(d => d[1] > 0).length >= (min || 2);
+}
+
+// Base options factory
+function barOpts(color, indexAxis) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 400 },
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: '#fff', titleColor: '#1A2332', bodyColor: '#4A5568',
+      borderColor: '#D4DDE8', borderWidth: 1, padding: 10,
+      titleFont: { family: 'Inter', size: 12, weight: '600' }, bodyFont: { family: 'Inter', size: 11 },
+      cornerRadius: 6, displayColors: true, boxWidth: 10, boxHeight: 10,
+    }},
+    scales: indexAxis === 'y'
+      ? { x: { grid: { display: false }, ticks: { color: '#8E9BAD', font: { family: 'Inter', size: 10 } } },
+          y: { grid: { color: '#F3F4F6' }, ticks: { color: '#8E9BAD', font: { family: 'Inter', size: 10 } } } }
+      : { x: { grid: { color: '#F3F4F6' }, ticks: { color: '#8E9BAD', font: { family: 'Inter', size: 10 } } },
+          y: { grid: { color: '#F3F4F6' }, ticks: { color: '#8E9BAD', font: { family: 'Inter', size: 10 } } } },
+  };
+}
+
+// Defer chart creation by one animation frame so the container's CSS layout
+// is fully computed before Chart.js measures it (avoids 0x0 canvas rendering)
+function mkChart(canvasId, chartType, data, options, extra) {
+  requestAnimationFrame(() => {
+    nuke(canvasId);
+    charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+      type: chartType, data, options, ...extra
+    });
+  });
+}
+
+function makeBarH(canvasId, labels, data, color) {
+  mkChart(canvasId, 'bar', {
+    labels,
+    datasets: [{ data, backgroundColor: color + '22', borderColor: color, borderWidth: 1.5, borderRadius: 4, borderSkipped: false }]
+  }, { ...barOpts(color, 'y'), indexAxis: 'y' });
+}
+
+function makeBarV(canvasId, labels, data, color) {
+  mkChart(canvasId, 'bar', {
+    labels,
+    datasets: [{ data, backgroundColor: color + '22', borderColor: color, borderWidth: 1.5, borderRadius: 4, borderSkipped: false }]
+  }, barOpts(color, 'x'));
+}
+
+function makeDonut(canvasId, labels, data, colors) {
+  mkChart(canvasId, 'doughnut', {
+    labels,
+    datasets: [{ data, backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }]
+  }, {
+    responsive: true, maintainAspectRatio: false, cutout: '62%',
+    animation: { duration: 400 },
+    plugins: {
+      legend: { display: true, position: 'bottom', labels: {
+        color: '#4A5568', font: { family: 'Inter', size: 11 }, padding: 14,
+        usePointStyle: true, pointStyleWidth: 10,
+      }},
+      tooltip: {
+        backgroundColor: '#fff', titleColor: '#1A2332', bodyColor: '#4A5568',
+        borderColor: '#D4DDE8', borderWidth: 1, padding: 10,
+        titleFont: { family: 'Inter', size: 12, weight: '600' }, bodyFont: { family: 'Inter', size: 11 },
+        cornerRadius: 6,
+      }
+    }
+  });
+}
+
+function makeLine(canvasId, labels, data, color) {
+  mkChart(canvasId, 'line', {
+    labels,
+    datasets: [{
+      data, label: 'Count',
+      borderColor: color, backgroundColor: color + '18',
+      borderWidth: 2, fill: true, tension: 0.35,
+      pointBackgroundColor: color, pointRadius: 4, pointHoverRadius: 6,
+    }]
+  }, {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: '#fff', titleColor: '#1A2332', bodyColor: '#4A5568',
+      borderColor: '#D4DDE8', borderWidth: 1, padding: 10,
+      titleFont: { family: 'Inter', size: 12, weight: '600' }, bodyFont: { family: 'Inter', size: 11 },
+      cornerRadius: 6,
+    }},
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#8E9BAD', font: { family: 'Inter', size: 10 } } },
+      y: { grid: { color: '#F3F4F6' }, ticks: { color: '#8E9BAD', font: { family: 'Inter', size: 10 } } }
+    }
+  });
+}
+
+// Chart panel HTML
+function panel(id, title, sub, canvasId) {
+  return `<div class="ch-panel"><div class="ch-header"><span><span class="ch-title">${title}</span>${sub ? `<span class="ch-sub">${sub}</span>` : ''}</span></div><div class="ch-wrap"><canvas id="${canvasId}"></canvas></div></div>`;
+}
+
+function noData(title, sub, msg) {
+  return `<div class="ch-panel"><div class="ch-header"><span><span class="ch-title">${title}</span>${sub ? `<span class="ch-sub">${sub}</span>` : ''}</span></div><div class="no-data">${msg}</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RENDER CHARTS  — always reads from `filtered`
+// ═══════════════════════════════════════════════════════════════════
+function renderCharts() {
+  // `filtered` already reflects: (view mode filter) AND (dropdown filters)
+  const recs = filtered;
+  const ores = filtered.filter(r => r.record_type === 'ORE');
+  const iss  = filtered.filter(r => r.record_type === 'ISSUE');
+
+  // ── Row 1 ─────────────────────────────────────────────
+  const r1 = document.getElementById('ch-row-1');
+  r1.innerHTML = '';
+
+  // GMNS Theme
+  const themeE = Object.entries(countBy(recs, 'gmns_theme')).sort((a, b) => b[1] - a[1]);
+  if (hasMinData(themeE, 2)) {
+    r1.innerHTML += panel('theme', 'By GMNS Theme', 'items per theme', 'ch-theme');
+    makeBarH('ch-theme', themeE.map(d => d[0]), themeE.map(d => d[1]), PAL[0]);
+  } else {
+    r1.innerHTML += noData('By GMNS Theme', 'items per theme', 'Not enough data');
+  }
+
+  // Open vs Closed
+  const openN  = recs.filter(r => r.is_open).length;
+  const closedN = recs.filter(r => r.is_closed).length;
+  if (openN > 0 || closedN > 0) {
+    r1.innerHTML += panel('status', 'Open vs Closed', 'status breakdown', 'ch-status');
+    makeDonut('ch-status', ['Open', 'Closed'], [openN, closedN], [PAL[0], '#D4DDE8']);
+  } else {
+    r1.innerHTML += noData('Open vs Closed', 'status breakdown', 'No status data');
+  }
+
+  // Age Distribution
+  const buckets = ['0–30 days', '31–60 days', '61–90 days', '91–180 days', '180+ days'];
+  const ageData = buckets.map(b => recs.filter(r => r.age_bucket === b).length);
+  if (recs.some(r => r.age_days != null)) {
+    r1.innerHTML += panel('age', 'Aging Distribution', 'days since identified', 'ch-age');
+    makeBarV('ch-age', buckets, ageData, PAL[1]);
+  } else {
+    r1.innerHTML += noData('Aging Distribution', 'days since identified', 'No identification date data');
+  }
+
+  // ── Row 2 ─────────────────────────────────────────────
+  const r2 = document.getElementById('ch-row-2');
+  r2.innerHTML = '';
+
+  // Owner
+  const ownerRecs = iss.length ? iss : ores;
+  const ownerE = Object.entries(countBy(ownerRecs, 'owner')).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  if (hasMinData(ownerE, 2)) {
+    const ownerTitle = iss.length ? 'Top Issues by Owner' : 'Top OREs by Owner';
+    r2.innerHTML += panel('owner', ownerTitle, 'assigned owner', 'ch-owner');
+    makeBarH('ch-owner', ownerE.map(d => d[0]), ownerE.map(d => d[1]), PAL[2]);
+  } else {
+    r2.innerHTML += noData(iss.length ? 'Top Issues by Owner' : 'Top OREs by Owner', 'assigned owner', 'Not enough data');
+  }
+
+  // Team
+  const teamE = Object.entries(countBy(recs, 'team_l2')).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  if (hasMinData(teamE, 2)) {
+    r2.innerHTML += panel('team', 'By Team', 'L2 team', 'ch-team');
+    makeBarH('ch-team', teamE.map(d => d[0]), teamE.map(d => d[1]), PAL[3]);
+  } else {
+    r2.innerHTML += noData('By Team', 'L2 team', 'Not enough data');
+  }
+
+  // ── Row 3 ─────────────────────────────────────────────
+  const r3 = document.getElementById('ch-row-3');
+  r3.innerHTML = '';
+
+  // Markets
+  const countryE = topCountries(recs, 15);
+  if (hasMinData(countryE, 2)) {
+    r3.innerHTML += panel('country', 'Top Markets', 'items per market', 'ch-country');
+    makeBarH('ch-country', countryE.map(d => d[0]), countryE.map(d => d[1]), PAL[4]);
+  } else {
+    r3.innerHTML += noData('Top Markets', 'items per market', 'Not enough market data');
+  }
+
+  // Rating
+  const ratingE = Object.entries(countBy(recs, 'rating')).sort((a, b) => b[1] - a[1]);
+  if (hasMinData(ratingE, 2)) {
+    r3.innerHTML += panel('rating', 'By Rating', 'severity distribution', 'ch-rating');
+    const colors = ratingE.map(d => {
+      const l = (d[0] || '').toLowerCase();
+      if (l.includes('high') || l.includes('red'))   return '#DC2626';
+      if (l.includes('medium') || l.includes('amber')) return '#CA8A04';
+      if (l.includes('low') || l.includes('green'))  return '#16A34A';
+      return PAL[ratingE.indexOf(d) % PAL.length];
+    });
+    makeDonut('ch-rating', ratingE.map(d => d[0] || '(blank)'), ratingE.map(d => d[1]), colors);
+  } else {
+    r3.innerHTML += noData('By Rating', 'severity distribution', 'No rating data');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  QUALITY  — always reads from `filtered`
+// ═══════════════════════════════════════════════════════════════════
+function renderQuality() {
+  const recs = filtered;
+  const iss  = filtered.filter(r => r.record_type === 'ISSUE');
+  const items = [
+    { i: '👤', l: 'Missing Owner',      n: recs.filter(r => r.missing_owner).length,      f: 'f-owner' },
+    { i: '🎨', l: 'Missing Theme',       n: recs.filter(r => r.missing_theme).length,       f: 'f-theme' },
+    { i: '🌍', l: 'Missing Market',      n: recs.filter(r => r.missing_country).length,     f: 'f-market' },
+    { i: '🔍', l: 'Missing Root Cause', n: iss.filter(r => r.missing_root_cause).length, f: null },
+  ];
+  document.getElementById('q-row').innerHTML = items.map(it =>
+    `<div class="q-card ${it.n > 0 ? 'hi' : 'ok'}" ${it.f ? `onclick="filterByQ('${it.f}','(blank)')"` : 'style="cursor:default"'} >
+      <div class="q-icon">${it.i}</div>
+      <div class="q-body">
+        <div class="q-count ${it.n > 0 ? 'hi' : ''}">${it.n}</div>
+        <div class="q-label">${it.l}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function filterByQ(fid, val) {
+  const el = document.getElementById(fid);
+  if (el) { el.value = val; applyFilters(); }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  FILTERS — intelligent: only show a filter if ≥2 distinct values exist
+// ═══════════════════════════════════════════════════════════════════
+
+// Fields to build filter dropdowns from (key → field name, label, limit)
+const FILTER_FIELDS = [
+  { id: 'f-type',    key: 'record_type', label: 'Type',     limit: null, source: () => {
+      const opts = [];
+      if (oreRecords.length) opts.push(`<option value="ORE">ORE (${oreRecords.length})</option>`);
+      if (issueRecords.length) opts.push(`<option value="ISSUE">Issues (${issueRecords.length})</option>`);
+      return opts.join('');
+    }
+  },
+  { id: 'f-status',  key: 'status',     label: 'Status',   limit: null },
+  { id: 'f-rating', key: 'rating',     label: 'Rating',   limit: null },
+  { id: 'f-theme',  key: 'gmns_theme', label: 'Theme',    limit: null },
+  { id: 'f-owner',  key: 'owner',      label: 'Owner',    limit: 20  },
+  { id: 'f-market', key: 'country',    label: 'Market',   limit: 20  },
+  { id: 'f-age',    key: 'age_bucket', label: 'Age',      limit: null },
+];
+
+// Build options for a field only if ≥2 distinct values exist
+function buildFilterOpts(recs, key, limit) {
+  const m = {};
+  for (let i = 0; i < recs.length; i++) {
+    const v = NS(recs[i][key]) || '(blank)';
+    m[v] = (m[v] || 0) + 1;
+  }
+  const entries = Object.entries(m).sort((a, b) => b[1] - a[1]);
+  if (entries.length < 2) return null;  // Don't show if fewer than 2 options
+  if (limit) return entries.slice(0, limit).map(([v, c]) =>
+    `<option value="${ESC(v)}">${ESC(v)} (${c})</option>`).join('');
+  return entries.map(([v, c]) =>
+    `<option value="${ESC(v)}">${ESC(v)} (${c})</option>`).join('');
+}
+
+function populateFilters() {
+  const base = allRecords;
+  for (const field of FILTER_FIELDS) {
+    const el = document.getElementById(field.id);
+    if (!el) continue;
+    if (field.source) {
+      // Special source (e.g., record type from arrays)
+      const opts = field.source();
+      el.innerHTML = `<option value="">All ${field.label}s</option>` + opts;
+      el.style.display = opts ? '' : 'none';
+    } else {
+      const opts = buildFilterOpts(base, field.key, field.limit);
+      el.innerHTML = `<option value="">All ${field.label}s</option>` + (opts || '');
+      el.style.display = opts ? '' : 'none';  // Hide if < 2 options
+    }
+  }
+}
+
+function getFilters() {
+  return {
+    type:   document.getElementById('f-type').value   || '',
+    status: document.getElementById('f-status').value || '',
+    rating: document.getElementById('f-rating').value || '',
+    theme:  document.getElementById('f-theme').value  || '',
+    owner:  document.getElementById('f-owner').value  || '',
+    market: document.getElementById('f-market').value || '',
+    age:    document.getElementById('f-age').value    || '',
+  };
+}
+
+function applyFilters() {
+  const f = getFilters();
+  const cnt = Object.values(f).filter(v => v).length;
+  const badge = document.getElementById('fcnt');
+  if (cnt) { badge.style.display = 'inline'; badge.textContent = cnt; }
+  else { badge.style.display = 'none'; }
+
+  // Apply view mode first, then all dropdown filters (AND logic)
+  const base = view === 'combined' ? allRecords : view === 'ore' ? oreRecords : issueRecords;
+  filtered = base.filter(r => {
+    if (f.type   && r.record_type !== f.type)     return false;
+    if (f.status && NS(r.status) !== f.status)    return false;
+    if (f.rating && NS(r.rating) !== f.rating)    return false;
+    if (f.theme  && r.gmns_theme !== f.theme)     return false;
+    if (f.owner  && NS(r.owner) !== f.owner)       return false;
+    if (f.market && NS(r.country) !== f.market)    return false;
+    if (f.age    && r.age_bucket !== f.age)         return false;
+    return true;
+  });
+
+  page = 1;
+  renderFilterTags(f);
+  // After filtering, re-populate dropdowns based on filtered data
+  // so they only show values that exist in current result set
+  refreshFilterOptions();
+  renderKPIs();
+  renderCharts();
+  renderTable();
+}
+
+// Re-populate filter dropdowns after each filter change
+// so options only reflect values in the current filtered dataset
+function refreshFilterOptions() {
+  const current = filtered;
+  for (const field of FILTER_FIELDS) {
+    const el = document.getElementById(field.id);
+    if (!el) continue;
+    const currentVal = el.value;  // Remember selected value
+    const opts = buildFilterOpts(current, field.key, field.limit);
+    el.innerHTML = `<option value="">All ${field.label}s</option>` + (opts || '');
+    // Restore selection if it still exists, otherwise clear it
+    if (currentVal && el.querySelector(`option[value="${CSS.escape(currentVal)}"]`)) {
+      el.value = currentVal;
+    } else {
+      el.value = '';
+    }
+    el.style.display = opts ? '' : 'none';
+  }
+}
+
+function renderFilterTags(f) {
+  const L = { type: 'Type', status: 'Status', rating: 'Rating', theme: 'Theme', owner: 'Owner', market: 'Market', age: 'Age' };
+  const I = { type: 'f-type', status: 'f-status', rating: 'f-rating', theme: 'f-theme', owner: 'f-owner', market: 'f-market', age: 'f-age' };
+  document.getElementById('ftags').innerHTML = Object.entries(f)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<span class="ftag">${L[k]}: ${ESC(v)} <button onclick="removeF('${I[k]}')">×</button></span>`)
+    .join('');
+}
+
+function removeF(id) {
+  const el = document.getElementById(id);
+  if (el) { el.value = ''; applyFilters(); }
+}
+
+function clearFilters() {
+  FILTER_FIELDS.forEach(field => {
+    const el = document.getElementById(field.id);
+    if (el) el.value = '';
+  });
+  applyFilters();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TABLE
+// ═══════════════════════════════════════════════════════════════════
+function renderTable() {
+  const term = NS(document.getElementById('t-search').value).toLowerCase();
+  let rows = term ? filtered.filter(r =>
+    NS(r.ore_id).toLowerCase().includes(term) ||
+    NS(r.title).toLowerCase().includes(term) ||
+    NS(r.owner).toLowerCase().includes(term) ||
+    NS(r.gmns_theme).toLowerCase().includes(term) ||
+    NS(r.country).toLowerCase().includes(term)
+  ) : filtered;
+
+  rows.sort((a, b) => {
+    let av = a[sortCol] ?? '', bv = b[sortCol] ?? '';
+    if (sortCol === 'identification_date') { av = ISODATE(av)?.getTime() || 0; bv = ISODATE(bv)?.getTime() || 0; }
+    else if (sortCol === 'age_days') { av = av ?? 0; bv = bv ?? 0; }
+    else { av = NS(av).toLowerCase(); bv = NS(bv).toLowerCase(); }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE));
+  if (page > totalPages) page = totalPages;
+  const start = (page - 1) * PAGE;
+  const pageRows = rows.slice(start, start + PAGE);
+
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < pageRows.length; i++) {
+    const r = pageRows[i];
+    const tr = document.createElement('tr');
+    const badges = [];
+    if (r.is_past_due)    badges.push('<span class="badge b-past">Overdue</span>');
+    if (r.is_high)        badges.push('<span class="badge b-risk">High Risk</span>');
+    if (ISY(r.ongoing_impact)) badges.push('<span class="badge b-ong">Ongoing</span>');
+    if (r.is_due_soon)    badges.push('<span class="badge b-soon">Due Soon</span>');
+    if (r.data_flagged || r.privacy_flagged) badges.push('<span class="badge b-age">Flagged</span>');
+    const dot = r.is_open ? 'dot-o' : 'dot-c';
+    const rCls = r.is_high ? 'r-hi' : r.is_medium ? 'r-med' : '';
+    const idate = ISODATE(r.identification_date);
+    const idateStr = idate ? idate.toISOString().slice(0, 10) : '';
+
+    tr.innerHTML =
+      `<td class="id-cell" title="${ESC(r.ore_id)}">${ESC(r.ore_id)}</td>` +
+      `<td class="tit-cell" title="${ESC(r.title)}">${ESC(r.title)}</td>` +
+      `<td><span class="badge ${r.record_type === 'ORE' ? 'b-ore' : 'b-iss'}">${r.record_type}</span></td>` +
+      `<td>${ESC(r.owner)}</td>` +
+      `<td>${ESC(r.team_l2)}</td>` +
+      `<td><span class="spill"><span class="dot-sm ${dot}"></span>${ESC(r.status)}</span></td>` +
+      `<td class="${rCls}">${ESC(r.rating)}</td>` +
+      `<td>${ESC(r.gmns_theme)}</td>` +
+      `<td>${ESC(r.country)}</td>` +
+      `<td>${idateStr}</td>` +
+      `<td><span class="badge b-age">${ESC(r.age_bucket)}</span></td>` +
+      `<td>${badges.join(' ')}</td>`;
+    frag.appendChild(tr);
+  }
+  const tbody = document.getElementById('t-body');
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+
+  document.getElementById('t-info').textContent = `${rows.length} records`;
+  renderPagination(rows.length, totalPages);
+}
+
+function sort(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = col; sortDir = 'asc'; }
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const th = document.querySelector(`th[data-col="${col}"]`);
+  if (th) th.classList.add('sorted');
+  page = 1;
+  renderTable();
+}
+
+function onSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { page = 1; renderTable(); }, 200);
+}
+
+function renderPagination(totalRows, totalPages) {
+  const s = (page - 1) * PAGE + 1;
+  const e = Math.min(page * PAGE, totalRows);
+  document.getElementById('pg-info').textContent = totalRows > 0 ? `${s}–${e} of ${totalRows}` : '0 records';
+  const ctrl = document.getElementById('pg-ctrl');
+  let h = `<button class="pg-btn" onclick="go(${page - 1})" ${page === 1 ? 'disabled' : ''}>‹</button>`;
+  pageList(page, totalPages).forEach(p => {
+    if (p === '...') h += `<span style="color:var(--text3);padding:0 .2rem;font-size:.72rem">…</span>`;
+    else h += `<button class="pg-btn ${p === page ? 'on' : ''}" onclick="go(${p})">${p}</button>`;
+  });
+  h += `<button class="pg-btn" onclick="go(${page + 1})" ${page === totalPages ? 'disabled' : ''}>›</button>`;
+  ctrl.innerHTML = h;
+}
+
+function pageList(cur, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const p = [];
+  if (cur <= 4) { for (let i = 1; i <= 5; i++) p.push(i); p.push('...'); p.push(total); }
+  else if (cur >= total - 3) { p.push(1); p.push('...'); for (let i = total - 4; i <= total; i++) p.push(i); }
+  else { p.push(1); p.push('...'); p.push(cur - 1, cur, cur + 1); p.push('...'); p.push(total); }
+  return p;
+}
+
+function go(p) {
+  const total = Math.max(1, Math.ceil(filtered.length / PAGE));
+  page = Math.max(1, Math.min(p, total));
+  renderTable();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CSV EXPORT
+// ═══════════════════════════════════════════════════════════════════
+function exportCSV() {
+  const F = ['ore_id','title','record_type','owner','team_l2','status','rating','gmns_theme','source_theme','country','identification_date','age_bucket','is_open','is_past_due','is_high','is_due_soon','ongoing_impact_flag','financial_amount_usd','mapping_status','missing_owner','missing_theme','missing_country'];
+  const rows = filtered.map(r => F.map(f => {
+    const v = r[f];
+    if (v == null) return '';
+    const s = String(v);
+    return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
+  }).join(','));
+  downloadBlob(new Blob([F.join(',') + '\n' + rows.join('\n')], { type: 'text/csv' }),
+    `gmns_export_${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  XLS EXPORT  (clean processed data)
+// ═══════════════════════════════════════════════════════════════════
+function exportXLS() {
+  setMsg('Building Excel file...');
+  const wb = XLSX.utils.book_new();
+
+  // ORE sheet
+  const ORE_OUT = [
+    'ore_id','title','description','team_l1','team_l2','team_l3','status','owner',
+    'accountable_exec','bucm','gmns_theme','source_theme','sub_theme','type_l1','type_l2',
+    'country','legal_entities','rating','ongoing_impact','identification_date','occurrence_date',
+    'capture_due_date','financial_amount_usd','loss_usd','cancellation','past_due','risk_pillar',
+    'risk_level2','data_flag','privacy_flag','is_open','is_closed','is_past_due','is_high',
+    'is_due_soon','country_count','legal_entity_count',
+    'missing_owner','missing_theme','missing_country','mapping_status','age_bucket','age_days'
+  ];
+  const ORE_LBL = [
+    'ORE ID','Title','Description','Team L1','Team L2','Team L3','Status','Owner',
+    'Accountable Exec','BUCM','GMNS Theme','Source Theme','Sub Theme','Type L1','Type L2',
+    'Country','Legal Entities','Rating','Ongoing Impact','Identified Date','Occurrence Date',
+    'Capture Due Date','Financial Amount (USD)','Loss Amount (USD)','Cancellation','Past Due',
+    'Risk Pillar','Risk Level 2','Data Flag','Privacy Flag','Is Open','Is Closed',
+    'Is Past Due','Is High Risk','Is Due Soon','Country Count','Legal Entity Count',
+    'Missing Owner','Missing Theme','Missing Country','Mapping Status','Age Bucket','Age (Days)'
+  ];
+
+  if (oreRecords.length) {
+    const aoa = [ORE_LBL, ...oreRecords.map(r => ORE_OUT.map(f => {
+      const v = r[f];
+      if (v instanceof Date) return v.toISOString().slice(0, 10);
+      return v == null ? '' : v;
+    }))];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = ORE_OUT.map((_, i) => ({ wch: Math.max(ORE_LBL[i].length, 12) }));
+    XLSX.utils.book_append_sheet(wb, ws, 'ORE');
+  }
+
+  // Issues sheet
+  const ISS_OUT = [
+    'ore_id','title','description','team_l1','team_l2','team_l3','status','rating','owner',
+    'accountable_exec','bucm','gmns_theme','source_theme','sub_theme','country','legal_entities',
+    'identification_date','capture_due_date','root_cause_theme','root_cause_sub_theme',
+    'is_repeat','regulator_tracking','past_due','failed_validation','long_dated','new_red_amber',
+    'risk_level2','data_flag','privacy_flag','is_open','is_closed','is_past_due','is_high',
+    'is_due_soon','missing_owner','missing_theme','missing_country','missing_root_cause',
+    'mapping_status','age_bucket','age_days'
+  ];
+  const ISS_LBL = [
+    'Issue ID','Title','Description','Team L1','Team L2','Team L3','Status','Rating','Owner',
+    'Accountable Exec','BUCM','GMNS Theme','Source Theme','Sub Theme','Country','Legal Entities',
+    'Identified Date','Target Date','Root Cause Theme','Root Cause Sub Theme',
+    'Repeat Issue','Regulator Tracking','Past Due','Failed Validation','Long Dated','New Red/Amber',
+    'Risk Level 2','Data Flag','Privacy Flag','Is Open','Is Closed','Is Past Due','Is High Risk',
+    'Is Due Soon','Missing Owner','Missing Theme','Missing Country','Missing Root Cause',
+    'Mapping Status','Age Bucket','Age (Days)'
+  ];
+
+  if (issueRecords.length) {
+    const aoa = [ISS_LBL, ...issueRecords.map(r => ISS_OUT.map(f => {
+      const v = r[f];
+      if (v instanceof Date) return v.toISOString().slice(0, 10);
+      return v == null ? '' : v;
+    }))];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = ISS_OUT.map((_, i) => ({ wch: Math.max(ISS_LBL[i].length, 12) }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Issues');
+  }
+
+  // Summary sheet
+  const recs = allRecords;
+  const sumAO = [
+    ['GMNS Risk Intelligence — Data Export'],
+    [''],
+    ['Generated', new Date().toLocaleString()],
+    [''],
+    ['ORE Records', oreRecords.length],
+    ['Issue Records', issueRecords.length],
+    ['Total Records', oreRecords.length + issueRecords.length],
+    [''],
+    ['ORE KPIs', ''],
+    ['ORE - Open', oreRecords.filter(r => r.is_open).length],
+    ['ORE - Closed', oreRecords.filter(r => r.is_closed).length],
+    ['ORE - Overdue', oreRecords.filter(r => r.is_past_due).length],
+    ['ORE - High Risk', oreRecords.filter(r => r.is_high).length],
+    ['ORE - Due Soon', oreRecords.filter(r => r.is_due_soon).length],
+    [''],
+    ['Issue KPIs', ''],
+    ['Issue - Open', issueRecords.filter(r => r.is_open).length],
+    ['Issue - Closed', issueRecords.filter(r => r.is_closed).length],
+    ['Issue - Overdue', issueRecords.filter(r => r.is_past_due).length],
+    ['Issue - High Risk', issueRecords.filter(r => r.is_high).length],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumAO), 'Summary');
+
+  setMsg('Downloading...');
+  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  downloadBlob(new Blob([buf], { type: 'application/octet-stream' }),
+    `gmns_clean_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  setMsg('Done!');
+  setTimeout(hideLoad, 600);
+}
+
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════════════════════════
+function resetDashboard() {
+  oreRecords = []; issueRecords = []; allRecords = []; filtered = [];
+  Object.values(charts).forEach(c => c.destroy()); charts = {};
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('upload-screen').style.display = 'flex';
+  mainFile = null; clearMain();
+  document.getElementById('err').innerHTML = '';
+  view = 'combined'; mode = 'combined';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════
+drop('dz-main', 'fi-main', handleMain);
+</script>
+</body>
+</html>
